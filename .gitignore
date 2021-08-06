@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+rule-based/.idea
+rule-based/input/
+rule-based/output/
