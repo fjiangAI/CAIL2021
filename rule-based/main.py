@@ -4,7 +4,9 @@ from random import choice
 input_path = './input/input.json'  # input file path
 output_path = './output/result.json'  # output file path
 
-stop_list = ["电联", "当面", "私聊", "付费咨询", "微信", "vx", "*", "我是", "欢迎来电", "来电咨询","电话咨询","我的","我们是","我是"]
+stop_list = ["电联", "当面", "私聊", "付费咨询", "微信",
+             "vx", "*", "我是", "欢迎来电", "来电咨询","电话咨询",
+             "我的","我们是","我是","电话","微同号","解答","详细沟通"]
 select_list = ["您好", "你好"]
 
 
