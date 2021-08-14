@@ -131,3 +131,6 @@ dmypy.json
 rule-based/.idea
 rule-based/input/
 rule-based/output/
+analysis/.idea
+analysis/input/
+analysis/output/
