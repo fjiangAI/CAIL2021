@@ -63,14 +63,15 @@ class Classifier:
             sample = {"du1": question, "du2": candidate}
             input_ids = self.convert_feature(sample, self.tokenizer, self.rs_max_len, self.max_len)
             input_list.append(torch.tensor(input_ids, dtype=torch.long))
-        input_list = pad_sequence(input_list, batch_first=True, padding_value=0)
-        input_tensors = torch.tensor(input_list).long().to(self.device)
-        text_output, class_output = self.model.generate(input_tensors,
-                                                            decoder_start_token_id=self.tokenizer.cls_token_id,
-                                                            eos_token_id=self.tokenizer.sep_token_id,
-                                                            max_length=self.generate_max_len,return_prob=True)
-        title_list = self.generate_results(text_output, self.tokenizer)
-        class_index = self.search_max_index(class_output)
+        with torch.no_grad():
+            input_list = pad_sequence(input_list, batch_first=True, padding_value=0)
+            input_tensors = torch.tensor(input_list).long().to(self.device)
+            text_output, class_output = self.model.generate(input_tensors,
+                                                                decoder_start_token_id=self.tokenizer.cls_token_id,
+                                                                eos_token_id=self.tokenizer.sep_token_id,
+                                                                max_length=self.generate_max_len,return_prob=True)
+            title_list = self.generate_results(text_output, self.tokenizer)
+            class_index = self.search_max_index(class_output)
         return title_list, class_index
 
     def clear_string(self, sentence):

@@ -23,15 +23,35 @@ class Creator:
 
     def get_label(self, answer, candidate):
         rouge_all = self.cal_rouge(answer, candidate)
-        rouge_all=int(rouge_all*10)
-        return rouge_all
+        index = 0
+        if rouge_all < 0.35:
+            index = 0
+        else:
+            index = 1
+        return index
+
+    def get_labels(self, answer, candidate_list):
+        rouge_list = []
+        labels = []
+        for candidate in candidate_list:
+            candidate = self.clear_string(candidate)
+            rouge_all = self.cal_rouge(answer, candidate)
+            rouge_list.append(rouge_all)
+        max_index = rouge_list.index(max(rouge_list))
+        for index, rouge in enumerate(rouge_list):
+            if index == max_index:
+                labels.append(1)
+            else:
+                labels.append(0)
+        return labels
 
     def process_sample(self, question, candidate_list, answer):
         question = self.clear_string(question)
         answer = self.clear_string(answer)
-        for candidate in candidate_list:
+        labels = self.get_labels(answer, candidate_list)
+        for index, candidate in enumerate(candidate_list):
             candidate = self.clear_string(candidate)
-            sample = {"du1": question, "du2": candidate, "rs": answer, "label": self.get_label(answer, candidate)}
+            sample = {"du1": question, "du2": candidate, "rs": answer,"label": labels[index]}
             self.sample_list.append(sample)
 
     def write_to_file(self, des_file):
@@ -40,12 +60,12 @@ class Creator:
 
 
 if __name__ == '__main__':
-    output_path = "../data_dir2/test_sample.json"
-    input_path = "../input/input.json"
+    output_path = "../data_dir/test_sample.json"
+    input_path = "test.json"
     creator = Creator()
     with open(input_path, 'r', encoding="utf8") as f:
-        for index,line in enumerate(f):
-            print("正在处理第"+str(index)+"样本")
+        for index, line in enumerate(f):
+            print("正在处理第" + str(index) + "样本")
             data = json.loads(line)
             id = data.get('id')
             question = data.get("question")

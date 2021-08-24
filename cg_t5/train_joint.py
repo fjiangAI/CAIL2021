@@ -181,7 +181,7 @@ def set_args():
     parser.add_argument('--test_file_path', default='./data_dir/test_data.json', type=str, help='新闻标题生成的测试数据')
     parser.add_argument('--pretrained_model_path', default='./t5_pegasus_torch/', type=str, help='预训练的GPT2模型的路径')
     parser.add_argument('--data_dir', default='./data_dir', type=str, help='生成缓存数据的存放路径')
-    parser.add_argument('--num_train_epochs', default=2, type=int, help='模型训练的轮数')
+    parser.add_argument('--num_train_epochs', default=10, type=int, help='模型训练的轮数')
     parser.add_argument('--train_batch_size', default=2, type=int, help='训练时每个batch的大小')
     parser.add_argument('--test_batch_size', default=8, type=int, help='测试时每个batch的大小')
     parser.add_argument('--learning_rate', default=1e-4, type=float, help='模型训练时的学习率')
