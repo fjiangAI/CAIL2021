@@ -131,6 +131,9 @@ dmypy.json
 rule-based/.idea
 rule-based/input/
 rule-based/output/
-analysis/.idea
-analysis/input/
-analysis/output/
+analysis/
+analysis/lawformer
+cg_t5_full/.idea
+cg_t5_full/output/
+cg_t5_full/data_dir/
+t5p-mcdtb/

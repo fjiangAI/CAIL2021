@@ -31,8 +31,9 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 from tqdm import tqdm, trange
 
-from module.model import T5PForSequenceClassificationSpan
+from module.model import MT5PForSequenceClassificationSpan
 from module.tokenizer import T5PegasusTokenizer
+
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
@@ -67,7 +68,7 @@ def train(model, device, train_data, test_data, args):
                                    batch_size=train_batch_size, collate_fn=collate_func)
     total_steps = int(len(train_data_loader) * args.num_train_epochs / args.gradient_accumulation_steps)
     logger.info("总训练步数为:{}".format(total_steps))
-    model.to(device)
+    model = torch.nn.DataParallel(model)
     # 获取模型所有参数
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -99,6 +100,7 @@ def train(model, device, train_data, test_data, args):
             # 获取训练结果
             outputs = model(input_ids=input_ids, labels=label_ids, class_types=class_ids)
             loss = outputs[0]
+            loss=loss.mean()
             tr_loss += loss.item()
             # 将损失值放到Iter中，方便观察
             iter_bar.set_description("Iter (loss=%5.3f)" % loss.item())
@@ -127,8 +129,9 @@ def train(model, device, train_data, test_data, args):
                     model.train()
         # 每个epoch进行完，则保存模型
         output_dir = os.path.join(args.output_dir, "model-{}".format(iepoch))
-        model_to_save = model.module if hasattr(model, "module") else model
-        torch.save(model_to_save, output_dir)
+        # model_to_save = model.module if hasattr(model, "module") else model
+        # torch.save(model_to_save, output_dir)
+        torch.save(model.module.state_dict(), output_dir)
         # 清空cuda缓存
         torch.cuda.empty_cache()
 
@@ -174,15 +177,15 @@ def evaluate(model, device, test_data, args):
 def set_args():
     """设置训练模型所需参数"""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='0', type=str, help='设置训练或测试时使用的显卡')
+    parser.add_argument('--device', default='0,1,2,3', type=str, help='设置训练或测试时使用的显卡')
     parser.add_argument('--config_path', default='./t5_pegasus_torch/config.json', type=str, help='模型参数配置信息')
     parser.add_argument('--vocab_path', default='./t5_pegasus_torch/vocab.txt', type=str, help='词表，该词表为小词表，并增加了一些新的标记')
     parser.add_argument('--train_file_path', default='./data_dir/train_data.json', type=str, help='新闻标题生成的训练数据')
     parser.add_argument('--test_file_path', default='./data_dir/test_data.json', type=str, help='新闻标题生成的测试数据')
     parser.add_argument('--pretrained_model_path', default='./t5_pegasus_torch/', type=str, help='预训练的GPT2模型的路径')
     parser.add_argument('--data_dir', default='./data_dir', type=str, help='生成缓存数据的存放路径')
-    parser.add_argument('--num_train_epochs', default=10, type=int, help='模型训练的轮数')
-    parser.add_argument('--train_batch_size', default=2, type=int, help='训练时每个batch的大小')
+    parser.add_argument('--num_train_epochs', default=5, type=int, help='模型训练的轮数')
+    parser.add_argument('--train_batch_size', default=8, type=int, help='训练时每个batch的大小')
     parser.add_argument('--test_batch_size', default=8, type=int, help='测试时每个batch的大小')
     parser.add_argument('--learning_rate', default=1e-4, type=float, help='模型训练时的学习率')
     parser.add_argument('--warmup_proportion', default=0.1, type=float, help='warm up概率，即训练总步长的百分之多少，进行warm up')
@@ -204,6 +207,7 @@ def set_args():
     parser.add_argument('--class_weight', type=int, default=1, help='分类模块权重')
     return parser.parse_args()
 
+
 def seed_everything(seed=1029):
     '''
     设置整个开发环境的seed
@@ -220,6 +224,7 @@ def seed_everything(seed=1029):
     # unless you tell it to be deterministic
     torch.backends.cudnn.deterministic = True
 
+
 def main():
     # 设置模型训练参数
     args = set_args()
@@ -232,7 +237,7 @@ def main():
     if args.seed:
         seed_everything(seed=args.seed)
     # 加载模型的config
-    model = T5PForSequenceClassificationSpan(args)
+    model = MT5PForSequenceClassificationSpan(args)
     model.to(device)
     tokenizer = T5PegasusTokenizer.from_pretrained(args.pretrained_model_path)
     # 创建模型的输出目录
@@ -240,10 +245,10 @@ def main():
         os.makedirs(args.output_dir)
     # 加载训练数据和测试数据
     train_data = GPT2NewsTitleDataSet(tokenizer, args.max_len, args.title_max_len, args.data_dir, "train",
-                                      args.train_file_path,is_overwrite=True)
+                                      args.train_file_path, is_overwrite=False)
     # test_data = GPT2NewsTitleDataSet(tokenizer, args.max_len, args.title_max_len, args.data_dir, "test",
     #                                  args.test_file_path,is_overwrite=True)
-    test_data=None
+    test_data = None
     # 开始训练
     train(model, device, train_data, test_data, args)
 

@@ -7,6 +7,9 @@ class Creator:
     def __init__(self):
         self.sample_list = []
         self.evaluator = Evaluator()
+        self.stop_list = ["电联", "当面", "私聊", "付费咨询",
+                          "vx", "*", "我是", "欢迎来电", "来电咨询", "电话咨询",
+                          "我的", "我们是", "我是", "电话", "微同号", "解答", "详细沟通"]
 
     def clear_string(self, sentence):
         sentence = sentence.replace("\n", "")
@@ -25,7 +28,7 @@ class Creator:
     def select_top_candidate(self, answer, candidate_list):
         rouge_list = []
         new_candidate_list = []
-        max_index=0
+        max_index = 0
         for candidate in candidate_list:
             candidate = self.clear_string(candidate)
             rouge_all = self.cal_rouge(answer, candidate)
@@ -46,9 +49,24 @@ class Creator:
             new_candidates.append(new_candidate)
         return new_candidates
 
+    def has_stop_word(self, sentence):
+        for stop_word in self.stop_list:
+            if sentence.__contains__(stop_word):
+                return True
+        return False
+
+    def delete_AD(self, candidate_list):
+        new_candidate_list = []
+        for candidate in candidate_list:
+            if self.has_stop_word(candidate):
+                continue
+            new_candidate_list.append(candidate)
+        return new_candidate_list
+
     def process_sample(self, question, candidate_list, answer):
         question = self.clear_string(question)
         answer = self.clear_string(answer)
+        #candidate_list=self.delete_AD(candidate_list)
         new_candidate_list, max_index = self.select_top_candidate(answer, candidate_list)
         sample = {"du1": question, "du2": new_candidate_list, "rs": answer, "label": max_index}
         self.sample_list.append(sample)
@@ -59,7 +77,7 @@ class Creator:
 
 
 if __name__ == '__main__':
-    output_path = "../data_dir/train_sample2.json"
+    output_path = "../data_dir/train_sample.json"
     input_path = "./data_second_train.json"
     input_path2 = "./data_first_train.json"
     creator = Creator()

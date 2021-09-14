@@ -1,19 +1,33 @@
+import argparse
+
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from module.tokenizer import T5PegasusTokenizer
-
-
+from module.model import MT5PForSequenceClassificationSpan
+def set_args():
+    """设置训练模型所需参数"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pretrained_model_path', default='./t5_pegasus_torch/', type=str, help='预训练的GPT2模型的路径')
+    parser.add_argument('--class_size', type=int, default=4, help='类别')
+    parser.add_argument('--class_hidden_size', type=int, default=768)
+    parser.add_argument('--span_layer', type=str, default="endpoint", help='span层的类型')
+    parser.add_argument('--class_proj_dim', type=int, default=256, help='span层的映射大小')
+    parser.add_argument('--use_proj', action='store_true', help='是否使用映射')
+    parser.add_argument('--generate_weight', type=int, default=1, help='生成模块权重')
+    parser.add_argument('--class_weight', type=int, default=1, help='分类模块权重')
+    return parser.parse_args()
 class Classifier:
     def __init__(self, vocab_path, model_path, device=0, rs_max_len=200, max_len=512):
         self.tokenizer = T5PegasusTokenizer.from_pretrained(vocab_path)
-        self.model = torch.load(model_path)
+        args=set_args()
+        self.model = MT5PForSequenceClassificationSpan(args)
+        self.model.load_state_dict(torch.load(model_path))
         self.device = device
         self.model.to(device)
         self.model.eval()
         self.rs_max_len = rs_max_len
         self.max_len = max_len
         self.generate_max_len = rs_max_len
-
     def find_longest_du(self, dus):
         max_length = 0
         max_index = -1
@@ -87,6 +101,8 @@ class Classifier:
         input_tensors=[]
         question = self.clear_string(question)
         candidate_list = self.clear_strings(candidate_list)
+        print(type(candidate_list))
+        print(len(candidate_list))
         sample = {"du1": question, "du2": candidate_list}
         input_ids = self.convert_feature(sample, self.tokenizer, self.rs_max_len, self.max_len)
         input_list.append(torch.tensor(input_ids, dtype=torch.long))

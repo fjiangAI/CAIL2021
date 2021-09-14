@@ -75,11 +75,11 @@ class Evaluator:
 
 if __name__ == '__main__':
     input_path = '../data_dir/test.json'  # input file path
-    for i in range(10):
-        output_path = './cg_t5_full2/result' + str(i) + '.json'  # output file path
+    for i in range(4,5):
+        output_path = './cg_mt5_full2/result' + str(i) + '.json'  # output file path
         evaluator = Evaluator()
         evaluator.read_answer(input_path, "golden")
         evaluator.read_answer(output_path, "predict")
         evaluator.compute_rouges()
         evaluator.show_result()
-        evaluator.write_detail("./cg_t5_full2/detail.tsv")
+        evaluator.write_detail("./cg_mt5_full2/detail.tsv")

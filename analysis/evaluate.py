@@ -53,7 +53,7 @@ class Evaluator:
 
 if __name__ == '__main__':
     input_path = './input/input.json'  # input file path
-    output_path = './output/result.json'  # output file path
+    output_path = './lawformer/result2.json'  # output file path
     evaluator = Evaluator()
     evaluator.read_answer(input_path, "golden")
     evaluator.read_answer(output_path, "predict")
